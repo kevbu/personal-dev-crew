@@ -38,6 +38,8 @@ Then in any project:
 | `prep` | Feature briefs for indie-agent | [devshop/crew](https://github.com/devshop-software/crew) | `/prep` |
 | `adjust` | Project onboarding, CLAUDE.md Workflow Config | [devshop/crew](https://github.com/devshop-software/crew) | `/adjust` |
 | `indie-agent` | Autonomous implementation from a brief | [devshop/crew](https://github.com/devshop-software/crew) | `/indie-agent` |
+| `product-manager` | Prioritize GitHub Issues → ranked `pm-backlog.md` | Custom | `/product-manager` |
+| `work-backlog` | Backlog orchestrator — runs indie-agent per ticket | Custom | `/work-backlog` |
 
 ## PM Skills (via plugin marketplace)
 
@@ -52,6 +54,30 @@ Install separately — these power the early discovery phases:
 /plugin install epic-breakdown-advisor@pm-skills
 /plugin install jobs-to-be-done@pm-skills
 ```
+
+## GitHub Backlog Workflow
+
+File GitHub Issues for bugs, features, and improvements — then let the crew implement them:
+
+```
+/work-backlog --limit 3
+```
+
+What happens:
+1. `/product-manager` reads open issues and ranks them (security → bugs → features) using PM frameworks from [RefoundAI/lenny-skills](https://github.com/RefoundAI/lenny-skills)
+2. For each prioritized issue (up to `--limit`): creates a worktree + branch `issue/<N>-<slug>`, dispatches `/indie-agent` (spec → implement → QA → review → ship), and posts the PR link as a comment on the issue
+3. Issues auto-close on PR merge via `Closes #<N>` in the PR body
+
+```
+/product-manager              # only prioritize, don't implement yet
+/work-backlog --dry-run       # preview which tickets would run
+/work-backlog --issue 42      # implement a single specific issue
+/work-backlog --limit 1       # implement only the top-ranked ticket
+```
+
+Requires: `gh auth login` and `/adjust` already run for the project.
+
+---
 
 ## The Full Workflow
 
