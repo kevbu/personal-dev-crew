@@ -33,8 +33,13 @@ Accept optional flags anywhere in the input:
 
 ## Step 1 — Pre-flight
 
-1. Read `CLAUDE.md`. Find the `## Workflow Config` key-value table. If it doesn't exist, stop: "No Workflow Config found. Run `/adjust` to set up the project."
-2. Parse from Workflow Config: `workflow-dir`, `base-branch`. Store for use in all subsequent steps.
+1. Read `CLAUDE.md`. Find the `## Workflow Config` section. If the section doesn't exist or contains no Markdown table (`|`-separated rows), stop: "No Workflow Config table found. Run `/adjust` to generate the required table format — bullet-list or prose configs are not supported."
+2. Parse the Workflow Config table. Fail loudly if required keys are absent:
+   - `workflow-dir` **(required)** — stop if missing: "Required Workflow Config key missing: `workflow-dir`. Run `/adjust`."
+   - `base-branch` **(required)** — stop if missing: "Required Workflow Config key missing: `base-branch`. Run `/adjust`."
+   - `worktree-layout` (optional, default: `standard`) — values: `standard` or `bare-clone`
+   - `worktree-copy-dirs` (optional, default: empty — see Step 4c2 for auto-detection)
+   - `worktree-codegen-cmd` (optional, default: empty)
 3. Detect the repo: `git remote get-url origin`. Parse `owner/repo`.
 4. Verify `gh` CLI is authenticated: `gh auth status`. If the command fails, stop: "GitHub CLI is not authenticated. Run `gh auth login` first."
 
@@ -155,21 +160,56 @@ From the issue number and title:
 - **Slug:** lowercase kebab-case, max 4 words from the title. Example: issue #42 "Add CSV export for reports" → `add-csv-export-reports`
 - **Folder suffix:** `issue-<number>-<slug>` (e.g., `issue-42-add-csv-export-reports`)
 - **Branch name:** `issue/<number>-<slug>` (e.g., `issue/42-add-csv-export-reports`)
-- **Worktree path:** `../../wt/issue-<number>-<slug>` (sibling to current worktree, inside `wt/`)
+- **Worktree path:** computed from `worktree-layout`:
+  - `standard` (default): `../wt/issue-<number>-<slug>` — cwd is the repo root; `../wt` is a sibling directory next to the repo
+  - `bare-clone`: `../../wt/issue-<number>-<slug>` — cwd is `<project>/main/`; `../../wt` resolves to `<project>/wt/`
+
+All subsequent steps use `<worktree-path>` to refer to this computed value.
 
 ### 4c — Create the Worktree
 
-```bash
-mkdir -p ../../wt
-git worktree add ../../wt/issue-<number>-<slug> -b issue/<number>-<slug> <base-branch>
-```
-
-Copy local environment files into the new worktree (gitignored, not in the fresh checkout):
+Using `<worktree-path>` from Step 4b:
 
 ```bash
-[ -f .env ] && cp .env ../../wt/issue-<number>-<slug>/
-[ -f .env.local ] && cp .env.local ../../wt/issue-<number>-<slug>/
+mkdir -p $(dirname <worktree-path>)
+git worktree add <worktree-path> -b issue/<number>-<slug> <base-branch>
 ```
+
+### 4c2 — Prepare Environment
+
+A fresh worktree contains only tracked files. Run these steps before dispatching indie-agent — otherwise lint, test, build, and e2e phases fail immediately.
+
+**4c2a — Install dependencies** (run inside `<worktree-path>`):
+
+Detect in this order and run the first match:
+- `pnpm-lock.yaml` present → `pnpm install --frozen-lockfile`
+- `yarn.lock` present → `yarn install --frozen-lockfile`
+- `package.json` present (no lock above) → `npm ci`
+- `requirements.txt` present → `pip install -r requirements.txt`
+- `pyproject.toml` present → `pip install -e .`
+- `Cargo.toml` present → `cargo build`
+- None matched → skip, warn: "No recognized dependency manifest found. Skipping install — lint/test may fail."
+
+If the install command exits non-zero, stop: "Dependency install failed in worktree. Fix the install error before running work-backlog."
+
+**4c2b — Copy environment and stateful files/dirs** (from the current checkout into `<worktree-path>`):
+
+```bash
+# Always copy env files if present
+[ -f .env ] && cp .env <worktree-path>/
+[ -f .env.local ] && cp .env.local <worktree-path>/
+
+# Copy worktree-copy-dirs from Workflow Config (each as an isolated copy, never symlink)
+for dir in <worktree-copy-dirs>; do
+  [ -d "$dir" ] && cp -r "$dir" <worktree-path>/
+done
+```
+
+Auto-default for `data/`: if `data/` exists in the current checkout AND appears in `.gitignore`, copy it automatically — safe default for SQLite-based apps where tests read/write a local DB. To disable: set `worktree-copy-dirs: none` in Workflow Config.
+
+**4c2c — Run codegen** (if configured):
+
+If `worktree-codegen-cmd` is set in Workflow Config, run it inside `<worktree-path>`. If it exits non-zero, stop: "Codegen command failed: `<worktree-codegen-cmd>`. Fix the command or remove it from Workflow Config before running work-backlog."
 
 ### 4d — Fetch Full Issue Content
 
@@ -220,6 +260,7 @@ The feature input is the GitHub Issue content below. Treat it as the feature des
 - The PR body MUST include "Closes #<number>" so the issue auto-closes on merge.
 - Worktree and branch already exist — skip Step 1W entirely.
 - Use workflow folder: <workflow-dir>/issue-<number>-<slug>/
+- CRITICAL — FOREGROUND ONLY: Run ALL phase subagents (spec, implementation, QA, review, ship, CI fix) in FOREGROUND (blocking). Do NOT use run_in_background: true for any phase. You are already running as a background subagent yourself and cannot receive child completion notifications — any nested background child will stall and never resume.
 
 ## Workflow Context
 - Workflow folder: <workflow-dir>/issue-<number>-<slug>/
@@ -246,8 +287,9 @@ Report: current phase, most recent log event, time since last log line.
 
 After the completion notification fires:
 
-1. Read `<worktree-path>/<workflow-dir>/issue-<number>-<slug>/05-indie-summary.md` to extract PR URL and status.
-2. If the summary is missing, read `_progress.log` last lines and reconstruct a partial status.
+1. Check whether `<worktree-path>/<workflow-dir>/issue-<number>-<slug>/05-indie-summary.md` exists and contains a PR URL.
+2. **If the summary is missing or contains no PR URL** (stalled partial run): read the last 20 lines of `_progress.log` to find the last completed phase. Set status = `FAILED`, note = "Stalled after `<last phase from log>` — no 05-indie-summary.md or PR URL found. Resume manually: `/indie-agent <worktree-path>/<workflow-dir>/issue-<number>-<slug>`." Skip Step 4g (issue comment). Proceed directly to Step 4h (update run log). Never report `DONE` or `SHIPPED` when the summary is absent.
+3. If the summary is present and contains a PR URL: extract it and proceed to Step 4g.
 
 ### 4g — Post-Ship: Comment on Issue
 
@@ -328,6 +370,7 @@ After PRs are merged, clean up worktrees:
 - Delete worktrees automatically — leave cleanup to the user after merge
 - Retry a failed ticket more than once in the same run — log it as FAILED and move on
 - Re-implement the indie-agent pipeline directly — always dispatch indie-agent as a subagent
+- Dispatch indie-agent without the FOREGROUND ONLY override — nested background agents silently stall, producing a partial run that looks like completion
 - Run tickets in parallel — sequential execution is the safety model
 - Skip the pre-flight check — missing Workflow Config will cause all downstream agents to fail
 - Comment on already-done tickets — only post the issue comment after a new successful ship
@@ -347,3 +390,5 @@ If you catch yourself thinking any of these, stop:
 - "I'll work directly in the main checkout instead of creating worktrees" — STOP. Each ticket gets its own worktree.
 - "I should clean up the worktree right after the ticket is done" — STOP. Leave cleanup to the user after the PR is merged.
 - "The --limit is too low, I'll process more tickets anyway" — STOP. The limit is a safety cap. Respect it or ask the user to increase it explicitly.
+- "indie-agent returned, so the ticket must be done" — STOP. Verify `05-indie-summary.md` and a PR URL exist before marking DONE. A background child that stalled mid-pipeline can still fire a completion notification.
+- "The worktree path is ../../wt — that's what indie-agent uses" — STOP. indie-agent's path assumes bare-clone. work-backlog computes the path from `worktree-layout`. Use the value from Step 4b.
