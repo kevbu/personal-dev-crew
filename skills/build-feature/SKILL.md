@@ -42,9 +42,10 @@ If no description is provided, ask: *"What feature do you want to add? One sente
 [6] Code Review           → review correctness and quality
     ── GATE 3: Review approval ──
 [7] Ship                  → commit, PR
+[8] File Findings         → open GitHub Issues for leftover findings/bugs
 ```
 
-Gates are mandatory pauses where the user approves before the pipeline continues. Steps 2–3 and 4–6 run autonomously within their windows.
+Gates are mandatory pauses where the user approves before the pipeline continues. Steps 2–3 and 4–6 run autonomously within their windows. Step 8 runs automatically after ship.
 
 ---
 
@@ -243,6 +244,20 @@ The ship skill will:
 
 ---
 
+## Step 8 — File Findings
+
+Invoke the `file-findings` skill with the workflow folder.
+
+The file-findings skill will:
+- Read the latest QA and review artifacts
+- Extract leftover findings that survived to ship — MINOR review issues, non-blocking QA issues, deliberately-untested scenarios, out-of-scope follow-ups
+- Create one labeled GitHub Issue per finding, referencing the ship PR
+- Write `05-findings.md` recording what was filed
+
+This step runs **automatically** — no gate. It fails gracefully: if `gh` isn't authenticated or no findings remain, it warns and returns without blocking. If ship was skipped (no PR), it still files issues, just without the PR reference.
+
+---
+
 ## Final Report
 
 When done, present:
@@ -256,8 +271,11 @@ Branch: <branch>
 What was built:
   <bullet list of in-scope items from feature brief>
 
+Findings filed: <N GitHub Issues> (see _workflow/<folder>/05-findings.md)
+
 Next steps:
   - Review the PR
+  - Triage the filed findings in GitHub Issues
   - Test locally: <run command from CLAUDE.md>
 ```
 
@@ -275,6 +293,7 @@ Next steps:
 | 5 | qa-engineer | `03-qa.md` |
 | 6 | codebase-review | `04-review.md` |
 | 7 | ship | PR, branch |
+| 8 | file-findings | `05-findings.md`, GitHub Issues |
 
 ---
 
@@ -284,9 +303,10 @@ Next steps:
 - Verify `CLAUDE.md` + Workflow Config before anything else — downstream skills require it
 - Explore the existing codebase before writing the feature brief — reference real code, not guesses
 - Pass the feature brief forward to every subsequent skill as context
-- Log each step as it starts: `Starting step N/7 — <Name>...`
+- Log each step as it starts: `Starting step N/8 — <Name>...`
 - Mark UX as SKIPPED in the log when the feature has no UI changes
 - Stop at all three gates
+- Run `file-findings` automatically after ship — it opens GitHub Issues for the leftover findings so they don't get lost
 
 **DON'T:**
 - Run `tech-lead` — the stack is already decided
@@ -294,4 +314,5 @@ Next steps:
 - Skip codebase exploration — planning blind against an existing codebase produces wrong file paths and missed dependencies
 - Run QA and review in parallel — QA must complete before review reads its output
 - Run ship if the review verdict is FAIL
+- Let a file-findings problem (gh not authed, no PR) block or fail the flow — it degrades gracefully after a successful ship
 - Proceed past any gate without explicit user approval ("sounds good" counts, silence does not)
