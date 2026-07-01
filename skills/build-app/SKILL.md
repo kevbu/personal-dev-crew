@@ -43,9 +43,10 @@ If no description is provided, ask: *"What app do you want to build? One sentenc
 [8] Code Review           → review the implementation
     ── GATE 3: Review approval ──
 [9] Ship                  → commit, PR, deploy
+[10] File Findings        → open GitHub Issues for leftover findings/bugs
 ```
 
-Gates are mandatory pauses where the user approves before the pipeline continues. Everything between gates runs autonomously.
+Gates are mandatory pauses where the user approves before the pipeline continues. Everything between gates runs autonomously. Step 10 runs automatically after ship.
 
 ---
 
@@ -247,6 +248,20 @@ The ship skill will:
 
 ---
 
+## Step 10 — File Findings
+
+Invoke the `file-findings` skill with the workflow folder.
+
+The file-findings skill will:
+- Read the latest QA (`06-qa.md`) and review (`07-review.md`) artifacts
+- Extract leftover findings that survived to ship — MINOR review issues, non-blocking QA issues, deliberately-untested scenarios, out-of-scope follow-ups
+- Create one labeled GitHub Issue per finding, referencing the ship PR
+- Write `08-findings.md` recording what was filed
+
+This step runs **automatically** — no gate. It fails gracefully: if `gh` isn't authenticated or no findings remain, it warns and returns without blocking.
+
+---
+
 ## Final Report
 
 When done, present:
@@ -261,8 +276,11 @@ Run: make dev
 What was built:
   <bullet list of core features>
 
+Findings filed: <N GitHub Issues> (see _workflow/<folder>/08-findings.md)
+
 Next steps:
   - Review the PR
+  - Triage the filed findings in GitHub Issues
   - Run locally: cd <folder> && make dev
   - Deploy: make deploy
 ```
@@ -283,6 +301,7 @@ Next steps:
 | 7 | qa-engineer | `06-qa.md` |
 | 8 | codebase-review | `07-review.md` |
 | 9 | ship | PR, branch |
+| 10 | file-findings | `08-findings.md`, GitHub Issues |
 
 ---
 
@@ -291,9 +310,10 @@ Next steps:
 **DO:**
 - Pass artifacts forward — each skill gets the outputs of all previous steps as context
 - Stop at all three gates — never skip user approval
-- Report progress at the start of each step ("Starting step 3/9 — Tech Lead...")
+- Report progress at the start of each step ("Starting step 3/10 — Tech Lead...")
 - If any step produces a FAIL or BLOCKED status, stop and report before proceeding
 - Keep gate summaries short — the user doesn't need to re-read the full artifact
+- Run `file-findings` automatically after ship — it opens GitHub Issues for the leftover findings so they don't get lost
 
 **DON'T:**
 - Implement anything yourself — delegate to the right skill
@@ -301,3 +321,4 @@ Next steps:
 - Proceed past a gate without explicit user approval ("sounds good" counts, silence does not)
 - Run QA and review in parallel — QA must complete before review reads its output
 - Run ship if the review verdict is FAIL
+- Let a file-findings problem (gh not authed, no PR) block or fail the flow — it degrades gracefully after a successful ship

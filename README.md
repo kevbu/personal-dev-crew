@@ -34,6 +34,7 @@ Then in any project:
 | `qa-engineer` | E2E tests, Gherkin, acceptance criteria | [devshop/crew](https://github.com/devshop-software/crew) | `/qa` |
 | `codebase-review` | Code review | [devshop/crew](https://github.com/devshop-software/crew) | `/codebase-review` |
 | `ship` | Branch, commit, PR | [devshop/crew](https://github.com/devshop-software/crew) | `/ship` |
+| `file-findings` | Files leftover QA/review findings as GitHub Issues | Custom | `/file-findings` |
 | `docs` | Documentation generation | [devshop/crew](https://github.com/devshop-software/crew) | `/docs` |
 | `prep` | Feature briefs for indie-agent | [devshop/crew](https://github.com/devshop-software/crew) | `/prep` |
 | `adjust` | Project onboarding, CLAUDE.md Workflow Config | [devshop/crew](https://github.com/devshop-software/crew) | `/adjust` |
@@ -101,6 +102,8 @@ Spec → Implementation → QA → Review
     GATE 3: approve before shipping
         ↓
       Ship → PR + deployed app
+        ↓
+   File Findings → leftover QA/review findings opened as GitHub Issues
 ```
 
 Or run individual agents manually:
