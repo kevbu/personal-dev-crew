@@ -148,9 +148,20 @@ folder that becomes a rival source of truth to `CLAUDE.md`.
 ### Escalate instead of inventing
 
 If the feature needs a visual pattern the codebase has no precedent for, **stop and ask the
-user** rather than designing one autonomously. Offer `/design` as an optional side quest for
-exploring layout variants by hand — it produces an editable canvas Artifact, not a file this
-pipeline can consume, so it never replaces `00-ux-design.md`.
+user** rather than designing one autonomously. Present:
+
+- what pattern is missing, and where it would sit in the flow
+- two or three options described in words, each with its trade-off
+- your recommendation
+
+Wait for the user to pick, record the choice and its reasoning in `00-ux-design.md`, then
+continue. This escalation needs no tooling beyond this file and the conversation.
+
+If the user wants to *see* layout variants before deciding, and their Claude Code build
+provides the built-in `design` canvas skill, `/design` is a useful manual side quest. It is
+not part of this repo and `install.sh` does not install it, so never assume it is available —
+and it produces an Artifact rather than a file this pipeline can read, so it never replaces
+`00-ux-design.md`. Transcribe the chosen layout back into this file by hand.
 
 If UI changes = no, skip this step and log: `Step 2/8 — UX Design: SKIPPED (no UI changes)`
 
