@@ -116,16 +116,54 @@ Do not proceed until the user explicitly approves.
 
 **Only run this step if UI changes = yes** in the feature brief.
 
-Invoke the `ui-ux-pro-max` skill with the feature brief as context.
+**Do NOT invoke a design-generator skill here** (`ui-ux-pro-max`, `frontend-design`,
+`/design`). This app already HAS a design system — its tokens, primitives and conventions
+are in `CLAUDE.md` and enforced by the repo's own gates. A generator's job is to invent a
+design system, so running one produces a *second* one: a fresh palette competing with the
+existing tokens, and class names that may fail the project's lint/gate rules. Those skills
+belong in `build-app`, where nothing exists yet.
 
-The UX skill will produce:
-- User flow for the new/changed screens
-- Key interactions and states
-- Design direction consistent with the existing app
+Never run a generator's `--persist` mode in a project repo — it writes a `design-system/`
+folder that becomes a rival source of truth to `CLAUDE.md`.
 
-Output: `_workflow/<folder>/00-ux-design.md`
+### Read first
 
-If UI changes = no, skip this step and log: `Step 2/7 — UX Design: SKIPPED (no UI changes)`
+- `CLAUDE.md` — design tokens, focus/interaction conventions, any documented ratchets or gates
+- The existing components and routes the feature will touch
+- The nearest sibling feature that already solved a similar UI problem — copy its shape
+
+### Then write `_workflow/<folder>/00-ux-design.md`
+
+- **User flow** — entry point → steps → exit, for each new or changed screen
+- **States** — empty, loading, error, success, and what each one says
+- **Primitives to reuse** — name the actual files (a button, card, modal, field the repo
+  already has). This is the section the spec writer leans on hardest
+- **New primitive needed?** — only with a justification for why nothing existing fits;
+  default answer is no
+- **Accessibility** — focus order, accessible names, keyboard model, live regions
+- **Constraints that apply** — which project gates, conventions or tests this change must
+  satisfy, quoted from `CLAUDE.md`
+- **Open questions** — anything the spec writer must not guess at
+
+### Escalate instead of inventing
+
+If the feature needs a visual pattern the codebase has no precedent for, **stop and ask the
+user** rather than designing one autonomously. Present:
+
+- what pattern is missing, and where it would sit in the flow
+- two or three options described in words, each with its trade-off
+- your recommendation
+
+Wait for the user to pick, record the choice and its reasoning in `00-ux-design.md`, then
+continue. This escalation needs no tooling beyond this file and the conversation.
+
+If the user wants to *see* layout variants before deciding, and their Claude Code build
+provides the built-in `design` canvas skill, `/design` is a useful manual side quest. It is
+not part of this repo and `install.sh` does not install it, so never assume it is available —
+and it produces an Artifact rather than a file this pipeline can read, so it never replaces
+`00-ux-design.md`. Transcribe the chosen layout back into this file by hand.
+
+If UI changes = no, skip this step and log: `Step 2/8 — UX Design: SKIPPED (no UI changes)`
 
 ---
 
@@ -287,7 +325,7 @@ Next steps:
 |---|---|---|
 | 0 | orchestrator | `_workflow/<folder>/` |
 | 1 | orchestrator | `00-feature-brief.md` |
-| 2 | ui-ux-pro-max (optional) | `00-ux-design.md` |
+| 2 | orchestrator (optional) | `00-ux-design.md` |
 | 3 | spec-writer | `01-spec.md` |
 | 4 | implementation | `02-implementation.md` |
 | 5 | qa-engineer | `03-qa.md` |
@@ -310,6 +348,7 @@ Next steps:
 
 **DON'T:**
 - Run `tech-lead` — the stack is already decided
+- Invoke a design-generator skill (`ui-ux-pro-max`, `frontend-design`, `/design`) in step 2 — the design system already exists; a generator would create a second one
 - Run `git init` or overwrite `CLAUDE.md`
 - Skip codebase exploration — planning blind against an existing codebase produces wrong file paths and missed dependencies
 - Run QA and review in parallel — QA must complete before review reads its output
