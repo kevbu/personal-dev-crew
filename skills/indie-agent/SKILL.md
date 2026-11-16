@@ -99,7 +99,7 @@ Every phase (Steps 2–6) follows the same dispatch pattern:
 
 ### Before dispatching:
 
-1. **Read the skill file** from disk: `.claude/skills/<skill-name>/SKILL.md`
+1. **Read the skill file** from disk: `${CLAUDE_SKILL_DIR}/../<skill-name>/SKILL.md` (sibling skills sit next to this one, both in the plugin install and in a legacy `~/.claude/skills/` install). If that path does not exist, fall back to `~/.claude/skills/<skill-name>/SKILL.md`, then `.claude/skills/<skill-name>/SKILL.md`.
 2. **Construct the agent prompt** (see template below) — it MUST embed the progress-log path
 3. **Dispatch** via the Agent tool. For long phases (implementation, QA, fix loops) use `run_in_background: true` so the orchestrator stays responsive to user status queries. For short phases (spec, review, ship) foreground is fine.
 
@@ -168,7 +168,7 @@ Where the skill says to ask the user or wait for confirmation, the overrides abo
 
 ## Step 2 — Dispatch Spec Agent
 
-**Skill file:** `.claude/skills/spec-writer/SKILL.md`
+**Skill file:** `${CLAUDE_SKILL_DIR}/../spec-writer/SKILL.md`
 
 **Dispatch mode:** foreground (spec runs are bounded — usually 5–15 min).
 
@@ -198,7 +198,7 @@ Update the progress log at every milestone (see "Progress Log (MANDATORY)" above
 
 ## Step 3 — Dispatch Implementation Agent
 
-**Skill file:** `.claude/skills/implementation/SKILL.md`
+**Skill file:** `${CLAUDE_SKILL_DIR}/../implementation/SKILL.md`
 
 **Dispatch mode:** **background** (`run_in_background: true`). Implementation is the longest phase; staying responsive matters.
 
@@ -224,7 +224,7 @@ Update the progress log at every milestone (see "Progress Log (MANDATORY)" above
 
 ## Step 4 — Dispatch QA Agent
 
-**Skill file:** `.claude/skills/qa-engineer/SKILL.md`
+**Skill file:** `${CLAUDE_SKILL_DIR}/../qa-engineer/SKILL.md`
 
 **Dispatch mode:** **background** (`run_in_background: true`). Playwright runs can be slow.
 
@@ -253,7 +253,7 @@ Update the progress log at every milestone (see "Progress Log (MANDATORY)" above
 
 ## Step 5 — Dispatch Review Agent
 
-**Skill file:** `.claude/skills/review/SKILL.md`
+**Skill file:** `${CLAUDE_SKILL_DIR}/../review/SKILL.md`
 
 **Dispatch mode:** foreground (review is read-heavy but bounded).
 
@@ -315,7 +315,7 @@ When review returns FAIL:
 
 ## Step 6 — Dispatch Ship Agent
 
-**Skill file:** `.claude/skills/ship/SKILL.md`
+**Skill file:** `${CLAUDE_SKILL_DIR}/../ship/SKILL.md`
 
 **Dispatch mode:** foreground (ship is quick).
 

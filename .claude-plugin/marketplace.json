@@ -1,0 +1,15 @@
+{
+  "name": "personal-dev-crew",
+  "description": "Marketplace for the personal-dev-crew plugin.",
+  "owner": {
+    "name": "Kevin Burger",
+    "url": "https://github.com/kevbu"
+  },
+  "plugins": [
+    {
+      "name": "personal-dev-crew",
+      "source": "./",
+      "description": "Idea-to-PR product team for personal apps, as Claude Code skills."
+    }
+  ]
+}

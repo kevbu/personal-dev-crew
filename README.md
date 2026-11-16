@@ -6,17 +6,55 @@ Orchestrates a full product team: PM → UX → Tech Lead → Backend → Fronte
 
 ## Quick Start
 
+Install as a Claude Code plugin (in any Claude Code session):
+
+```
+/plugin marketplace add kevbu/personal-dev-crew
+/plugin install personal-dev-crew@personal-dev-crew
+```
+
+Or from the shell:
+
 ```bash
-# Clone and install globally
-git clone https://github.com/kevbu/personal-dev-crew
-cd personal-dev-crew
-./install.sh
+claude plugin marketplace add kevbu/personal-dev-crew
+claude plugin install personal-dev-crew@personal-dev-crew
 ```
 
 Then in any project:
 
 ```
 /build-app a personal news app that shows me tech and AI news
+```
+
+Plugin skills are namespaced. `/build-app` works as long as no other skill uses that name. The full name is always `/personal-dev-crew:build-app`.
+
+### Updates
+
+Every push to `main` is a new version (the plugin has no pinned `version`, so Claude Code tracks the commit).
+
+| How | What to do |
+|---|---|
+| Auto-update (recommended) | `/plugin` → Marketplaces → `personal-dev-crew` → Enable auto-update. Off by default for third-party marketplaces. |
+| Manual | `/plugin marketplace update personal-dev-crew`, then `/reload-plugins` or restart |
+
+### Migrating from `install.sh`
+
+Old copies in `~/.claude/skills/` win over the plugin for the bare name (`/spec-writer` runs the old copy) and never receive updates. Delete them after installing the plugin:
+
+```bash
+cd ~/.claude/skills && rm -rf adjust backend-engineer build-app build-feature codebase-review devops-engineer docs file-findings frontend-design implementation indie-agent patterns-refactor prep product-manager qa-engineer review ship spec-writer tech-lead ui-ux-pro-max work-backlog
+```
+
+Check first that none of these folders holds your own edits you want to keep.
+
+### Legacy install (`install.sh`)
+
+Copies the skills into `~/.claude/skills/`. It skips skills that already exist, so it never updates them. Use only if you can't use plugins.
+
+```bash
+git clone https://github.com/kevbu/personal-dev-crew
+cd personal-dev-crew
+./install.sh
 ```
 
 ## The Team
@@ -150,3 +188,5 @@ The `tech-lead` skill defaults to:
 - [anthropics/skills](https://github.com/anthropics/skills) — frontend-design skill
 - [nextlevelbuilder/ui-ux-pro-max-skill](https://github.com/nextlevelbuilder/ui-ux-pro-max-skill) — UI/UX intelligence
 - [deanpeters/Product-Manager-Skills](https://github.com/deanpeters/product-manager-skills) — PM skills marketplace
+
+License texts for redistributed skills: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

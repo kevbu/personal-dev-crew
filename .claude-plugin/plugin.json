@@ -1,0 +1,11 @@
+{
+  "name": "personal-dev-crew",
+  "description": "A Claude Code product team for personal apps: build-app and build-feature orchestrate tech-lead, UX, spec, implementation, QA, review and ship skills; product-manager and work-backlog turn GitHub Issues into shipped PRs.",
+  "author": {
+    "name": "Kevin Burger",
+    "url": "https://github.com/kevbu"
+  },
+  "homepage": "https://github.com/kevbu/personal-dev-crew",
+  "repository": "https://github.com/kevbu/personal-dev-crew",
+  "keywords": ["skills", "workflow", "orchestration", "spec", "qa", "code-review", "github-issues"]
+}

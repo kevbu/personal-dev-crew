@@ -64,7 +64,7 @@ Read `_workflow/pm-backlog.md` and extract the `## Execution Index` table.
 
 ### Otherwise (no backlog, stale backlog, or `--refresh-backlog`):
 
-Read the product-manager skill file from disk: `.claude/skills/product-manager/SKILL.md`
+Read the product-manager skill file from disk: `${CLAUDE_SKILL_DIR}/../product-manager/SKILL.md` (fallback: `~/.claude/skills/product-manager/SKILL.md`)
 
 Dispatch product-manager as a **foreground** subagent:
 
@@ -232,7 +232,7 @@ Labels: <labels>
 
 ### 4e — Dispatch indie-agent
 
-Read the indie-agent skill file from disk: `.claude/skills/indie-agent/SKILL.md`
+Read the indie-agent skill file from disk: `${CLAUDE_SKILL_DIR}/../indie-agent/SKILL.md` (fallback: `~/.claude/skills/indie-agent/SKILL.md`)
 
 Dispatch indie-agent as a **background** subagent (`run_in_background: true`) — tickets take 30–60 minutes each:
 

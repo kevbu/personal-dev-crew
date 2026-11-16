@@ -15,6 +15,10 @@ You don't build anything yourself. You explore the existing codebase, scope the 
 
 Activate when the user invokes `/build-feature` or asks to add a feature to an existing running app. Otherwise ignore.
 
+## Skill Names
+
+Skill names below are bare (`spec-writer`, `ship`, ...). When this crew is installed as the `personal-dev-crew` plugin, its skills are namespaced: invoke them as `personal-dev-crew:<name>` (e.g. `personal-dev-crew:spec-writer`). If the namespaced name is not available, the crew is a legacy `install.sh` copy: use the bare name. To read a sibling skill's instructions from disk (e.g. to brief a subagent), use `${CLAUDE_SKILL_DIR}/../<name>/SKILL.md`.
+
 ---
 
 ## Input

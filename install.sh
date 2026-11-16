@@ -4,6 +4,11 @@ set -e
 SKILLS_DIR="$HOME/.claude/skills"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)/skills"
 
+echo "NOTE: install.sh is the legacy install path and never updates existing skills."
+echo "      Preferred: install the plugin inside Claude Code:"
+echo "        /plugin marketplace add kevbu/personal-dev-crew"
+echo "        /plugin install personal-dev-crew@personal-dev-crew"
+echo ""
 echo "Installing personal-dev-crew skills to $SKILLS_DIR..."
 
 mkdir -p "$SKILLS_DIR"
