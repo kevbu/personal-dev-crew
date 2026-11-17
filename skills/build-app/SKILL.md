@@ -19,7 +19,14 @@ Activate when the user invokes `/build-app` or describes an app they want to bui
 
 ## Skill Names
 
-Skill names below are bare (`spec-writer`, `ship`, ...). When this crew is installed as the `personal-dev-crew` plugin, its skills are namespaced: invoke them as `personal-dev-crew:<name>` (e.g. `personal-dev-crew:spec-writer`). If the namespaced name is not available, the crew is a legacy `install.sh` copy: use the bare name. To read a sibling skill's instructions from disk (e.g. to brief a subagent), use `${CLAUDE_SKILL_DIR}/../<name>/SKILL.md`. The PM skills `problem-statement` and `prd-development` come from separate plugins (`deanpeters/Product-Manager-Skills`) and keep their own names (e.g. `problem-statement:problem-statement`).
+Skill names below are bare (`spec-writer`, `ship`, ...). How a subagent finds them depends on the install:
+
+| Install | Skill tool name | Skill file |
+|---|---|---|
+| `personal-dev-crew` plugin | `personal-dev-crew:<name>` | `<crew-dir>/<name>/SKILL.md` |
+| Legacy `install.sh` | `<name>` | `~/.claude/skills/<name>/SKILL.md` |
+
+`<crew-dir>` is `${CLAUDE_SKILL_DIR}/..`. Claude Code substitutes it with an absolute path when it loads this skill. Write that absolute path into every dispatch prompt: a subagent cannot resolve `${CLAUDE_SKILL_DIR}` itself. The PM skills `problem-statement` and `prd-development` come from separate plugins (`deanpeters/Product-Manager-Skills`) and keep their own names (e.g. `problem-statement:problem-statement`). They have no `<crew-dir>` file.
 
 ---
 
@@ -84,7 +91,7 @@ Step 0 stays in the orchestrator. It sets up the folders and asks the user where
 - One fresh Agent-tool call per step. Never reuse an agent across steps. Never run two steps in one agent.
 - Foreground only. Never set `run_in_background`. If `build-app` itself runs as a subagent, a background child cannot report back to it (same rule as `work-backlog`).
 - Isolation: the prompt contains file paths, the step's task instructions, the overrides, and the user's own words (the app description, a change asked for at a gate, or answers to an earlier agent's questions, quoted with those questions). It never contains your summary, interpretation or reasoning about earlier steps, and never pastes artifact contents.
-- Skill loading: the subagent invokes the skill through the Skill tool by name. Fallback: read `~/.claude/skills/<name>/SKILL.md`. Do not use a project-local skills path. Plugin skills (`problem-statement`, `prd-development`) may be listed under a namespaced name such as `problem-statement:problem-statement`. Use the name the Skill tool lists.
+- Skill loading: the subagent invokes the skill through the Skill tool, as `personal-dev-crew:<name>` (plugin) or `<name>` (legacy install). Fallback: read `<crew-dir>/<name>/SKILL.md`, then `~/.claude/skills/<name>/SKILL.md`. Do not use a project-local skills path. See "Skill Names". Plugin skills (`problem-statement`, `prd-development`) may be listed under a namespaced name such as `problem-statement:problem-statement`. Use the name the Skill tool lists.
 - Subagents don't ask the user. They return `STATUS: QUESTIONS` with the questions. You ask the user, then dispatch a new agent for the same step with the same inputs, task line and overrides as the previous dispatch. Its "User request" keeps everything the previous dispatch for this step had (the user's original words and earlier Q&A rounds), then appends the subagent's questions verbatim and the user's answers verbatim. All of it is non-orchestrator words, so isolation holds.
 - Subagents don't dispatch other agents for pipeline work. Only the orchestrator dispatches fix rounds.
 
@@ -94,7 +101,7 @@ Step 0 stays in the orchestrator. It sets up the folders and asks the user where
 You are the <step-name> step of the /build-app orchestrator. Your working directory is: <project-root>
 
 ## Your Task
-Invoke the `<skill-name>` skill with the Skill tool. If the Skill tool does not list it, read ~/.claude/skills/<skill-name>/SKILL.md and follow it. If neither works, return STATUS: BLOCKED.
+Invoke the `<skill-name>` skill with the Skill tool. It may be listed under a namespaced name such as `personal-dev-crew:<skill-name>`; use the name the Skill tool lists. If the Skill tool lists neither, read <crew-dir>/<skill-name>/SKILL.md, else ~/.claude/skills/<skill-name>/SKILL.md, and follow it. If none of these works, return STATUS: BLOCKED.
 
 <step-specific task instructions from the step section below>
 

@@ -158,19 +158,16 @@ Or run individual agents manually:
 
 ## Install
 
-### Global install (recommended)
+Recommended: the plugin install in [Quick Start](#quick-start). It keeps the skills up to date.
+
+### Legacy: `install.sh` or manual copy
 
 ```bash
-./install.sh
+./install.sh                     # skips skills that already exist
+cp -r skills/* ~/.claude/skills/ # overwrites existing copies
 ```
 
-This copies all skills to `~/.claude/skills/`.
-
-### Manual
-
-```bash
-cp -r skills/* ~/.claude/skills/
-```
+Both copy the skills to `~/.claude/skills/` and never update them. Do not combine them with the plugin: the old copies shadow the plugin's bare skill names.
 
 ## Stack Defaults
 

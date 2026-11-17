@@ -19,7 +19,14 @@ Activate when the user invokes `/build-feature` or asks to add a feature to an e
 
 ## Skill Names
 
-Skill names below are bare (`spec-writer`, `ship`, ...). When this crew is installed as the `personal-dev-crew` plugin, its skills are namespaced: invoke them as `personal-dev-crew:<name>` (e.g. `personal-dev-crew:spec-writer`). If the namespaced name is not available, the crew is a legacy `install.sh` copy: use the bare name. To read a sibling skill's instructions from disk (e.g. to brief a subagent), use `${CLAUDE_SKILL_DIR}/../<name>/SKILL.md`.
+Skill names below are bare (`spec-writer`, `ship`, ...). How a subagent finds them depends on the install:
+
+| Install | Skill tool name | Skill file |
+|---|---|---|
+| `personal-dev-crew` plugin | `personal-dev-crew:<name>` | `<crew-dir>/<name>/SKILL.md` |
+| Legacy `install.sh` | `<name>` | `~/.claude/skills/<name>/SKILL.md` |
+
+`<crew-dir>` is `${CLAUDE_SKILL_DIR}/..`. Claude Code substitutes it with an absolute path when it loads this skill. Write that absolute path into every dispatch prompt: a subagent cannot resolve `${CLAUDE_SKILL_DIR}` itself.
 
 ---
 
@@ -81,7 +88,7 @@ Steps 0 to 2 stay in the orchestrator. They come before any code exists, and the
 - One fresh Agent-tool call per step. Never reuse an agent across steps. Never run two steps in one agent.
 - Foreground only. Never set `run_in_background`. If `build-feature` itself runs as a subagent, a background child cannot report back to it (same rule as `work-backlog`).
 - Isolation: the prompt contains file paths, the step's task instructions, the overrides, and the user's own words (a change asked for at a gate, or answers to an earlier agent's questions, quoted with those questions). It never contains your summary, interpretation or reasoning about earlier steps, and never pastes artifact contents.
-- Skill loading: the subagent invokes the skill through the Skill tool by name. Fallback: read `~/.claude/skills/<name>/SKILL.md`. Do not use a project-local skills path.
+- Skill loading: the subagent invokes the skill through the Skill tool, as `personal-dev-crew:<name>` (plugin) or `<name>` (legacy install). Fallback: read `<crew-dir>/<name>/SKILL.md`, then `~/.claude/skills/<name>/SKILL.md`. Do not use a project-local skills path. See "Skill Names".
 - Subagents don't ask the user. They return `STATUS: QUESTIONS` with the questions. You ask the user, then dispatch a new agent for the same step with the same inputs, task line and overrides as the previous dispatch. Its "User request" keeps everything the previous dispatch for this step had (the user's original words and earlier Q&A rounds), then appends the subagent's questions verbatim and the user's answers verbatim. All of it is non-orchestrator words, so isolation holds.
 - Latest file: when a step reads or verifies the "latest" `03-qa*.md` or `04-review*.md`, latest is the highest N. The unnumbered file counts as N=1. Do not sort by name.
 - Subagents don't dispatch other agents for pipeline work. Only the orchestrator dispatches fix rounds.
@@ -92,7 +99,7 @@ Steps 0 to 2 stay in the orchestrator. They come before any code exists, and the
 You are the <step-name> step of the /build-feature orchestrator. Your working directory is: <project-root>
 
 ## Your Task
-Invoke the `<skill-name>` skill with the Skill tool. If the Skill tool does not list it, read ~/.claude/skills/<skill-name>/SKILL.md and follow it. If neither works, return STATUS: BLOCKED.
+Invoke the `<skill-name>` skill with the Skill tool. It may be listed under a namespaced name such as `personal-dev-crew:<skill-name>`; use the name the Skill tool lists. If the Skill tool lists neither, read <crew-dir>/<skill-name>/SKILL.md, else ~/.claude/skills/<skill-name>/SKILL.md, and follow it. If none of these works, return STATUS: BLOCKED.
 
 <step-specific task instructions from the step section below>
 
