@@ -106,6 +106,8 @@ Spec → Implementation → QA → Review
    File Findings → leftover QA/review findings opened as GitHub Issues
 ```
 
+Each execution step runs in its own fresh subagent and reads only the artifact files, so no agent reviews its own work. `/build-feature` works the same way from the spec step on.
+
 Or run individual agents manually:
 
 ```
